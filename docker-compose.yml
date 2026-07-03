@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  ml-bootcamp-portal:
+    build: .
+    container_name: ml-bootcamp-portal
+    ports:
+      - "8585:8585"
+    volumes:
+      # Mount the parent courses directory into the container
+      # This dynamically exposes ALL course folders (e.g. 01 - Python..., 02 - Agentic AI...)
+      - ..:/app/courses:ro
+    environment:
+      - COURSES_DIR=/app/courses
+      - PORT=8585
+    restart: unless-stopped

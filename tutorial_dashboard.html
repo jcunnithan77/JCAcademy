@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Bootcamp — Interactive Local Dashboard</title>
+    <meta name="description" content="A comprehensive, transcript-based study guide linked to local course files.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside>
+        <div class="sidebar-header">
+            <h1>📚 ML Bootcamp Hub</h1>
+            <div class="progress-text">
+                <span>Course Progress</span>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        <div class="sidebar-search">
+            <input type="text" class="search-input" id="search-bar" placeholder="Search lectures…">
+        </div>
+        <div class="sidebar-menu" id="menu-container">
+            <!-- Menu items will be injected here by app.js -->
+        </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <main>
+        <header>
+            <div class="header-title-container">
+                <h2 id="header-section-title">Select a section</h2>
+            </div>
+            <div class="header-actions">
+                <div id="tutorial-selector-container" style="display:none; align-items:center; gap:6px;">
+                    <select id="tutorial-select" onchange="if(this.value) window.location.href='?file='+encodeURIComponent(this.value)" style="background:#1e293b; color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:6px 12px; border-radius:6px; font-family:'Inter',sans-serif; cursor:pointer; font-size:13px;">
+                    </select>
+                    <input type="file" id="header-json-upload" accept=".json" style="display:none;" onchange="uploadHeaderTutorial(event)">
+                    <button onclick="document.getElementById('header-json-upload').click()" title="Upload New Tutorial JSON" style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">
+                        📤 +
+                    </button>
+                </div>
+                <div class="ai-key-box">
+                    <span>🔑 AI Key:</span>
+                    <input type="password" id="ai-api-key-input" placeholder="AIza... or sk-...">
+                    <button onclick="saveApiKey()">Save</button>
+                </div>
+                <button class="quick-action-btn ai-btn" onclick="toggleAIChatDrawer(true)">
+                    <span>✨</span> AI Tutor
+                </button>
+                <button class="quick-action-btn" onclick="toggleProgressOfActive()">
+                    <span>✅</span> Mark Complete
+                </button>
+            </div>
+        </header>
+        <div class="content-workspace" id="content-container">
+            <!-- Content will be injected here by app.js -->
+        </div>
+
+        <!-- FLOATING SELECTION POPOVER -->
+        <div id="ai-selection-popover" class="ai-selection-popover" onclick="askAIAboutSelection()">
+            <span>✨</span> Explain Selection with AI
+        </div>
+
+        <!-- AI CHAT DRAWER -->
+        <aside id="ai-chat-drawer" class="ai-chat-drawer">
+            <div class="ai-drawer-header">
+                <div class="ai-drawer-title">
+                    <span>🤖</span>
+                    <h3>ML Bootcamp AI Tutor</h3>
+                </div>
+                <button class="ai-drawer-close" onclick="toggleAIChatDrawer(false)">✕</button>
+            </div>
+            
+            <div id="ai-context-preview" class="ai-context-preview" style="display: none;">
+                <div class="ai-ctx-header">
+                    <span>📌 Selected Context:</span>
+                    <button onclick="clearSelectionContext()">✕</button>
+                </div>
+                <p id="ai-context-text"></p>
+            </div>
+
+            <div class="ai-quick-prompts">
+                <button onclick="sendQuickPrompt('explain')">💡 Explain Simply</button>
+                <button onclick="sendQuickPrompt('code')">💻 Show Code</button>
+                <button onclick="sendQuickPrompt('interview')">❓ Interview Q&A</button>
+                <button onclick="sendQuickPrompt('debug')">🔍 Debug / Tips</button>
+            </div>
+
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-welcome">
+                    <span class="ai-welcome-icon">⚡</span>
+                    <h4>ML Bootcamp AI Tutor Ready</h4>
+                    <p>Highlight any text in the tutorial or ask questions directly below for instant deep-dives, code snippets, and explanations!</p>
+                </div>
+            </div>
+
+            <div class="ai-chat-input-area">
+                <textarea id="ai-chat-input" placeholder="Ask AI anything about this lecture..." rows="2" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendAIMessage();}"></textarea>
+                <div class="ai-input-actions">
+                    <button class="ai-clear-btn" onclick="clearAIChatHistory()">🗑️ Clear</button>
+                    <button class="ai-send-btn" onclick="sendAIMessage()">Send ↗</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RESOURCES MODAL -->
+        <div id="resources-modal" class="modal-overlay" onclick="closeResourcesModal(event)">
+            <div class="modal-card" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-header-title">
+                        <span>📦</span>
+                        <h3 id="modal-title">Session Resources</h3>
+                    </div>
+                    <button class="modal-close-btn" onclick="closeResourcesModal()">✕</button>
+                </div>
+                <div class="modal-body" id="modal-files-list">
+                    <!-- File links injected here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- LOAD DATA & LOGIC -->
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/chatbot.js"></script>
+
+</body>
+</html>
