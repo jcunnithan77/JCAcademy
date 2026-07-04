@@ -319,7 +319,7 @@ class PortalHandler(BaseHTTPRequestHandler):
             
         if path == "/api/course_jsons":
             json_files = []
-            for c_folder in ("Courses", "cources"):
+            for c_folder in ("courses", "Courses", "cources"):
                 c_dir = os.path.join(os.path.abspath("."), c_folder)
                 if os.path.exists(c_dir):
                     for f in sorted(os.listdir(c_dir)):
@@ -434,7 +434,7 @@ class PortalHandler(BaseHTTPRequestHandler):
                     self.wfile.write(f.read())
                 return
         elif local_rel in ("course_data.json", "assets/js/course_data.json"):
-            for c_folder in ("Courses", "cources"):
+            for c_folder in ("courses", "Courses", "cources"):
                 c_dir = os.path.join(os.path.abspath("."), c_folder)
                 if os.path.exists(c_dir):
                     jsons = [f for f in sorted(os.listdir(c_dir)) if f.endswith(".json")]
@@ -478,7 +478,7 @@ class PortalHandler(BaseHTTPRequestHandler):
                     note_content = data.get("content", "")
 
                     j_path = None
-                    for c_folder in ("Courses", "cources"):
+                    for c_folder in ("courses", "Courses", "cources"):
                         c_dir = os.path.join(os.path.abspath("."), c_folder)
                         if os.path.exists(c_dir):
                             if target_file and os.path.exists(os.path.join(c_dir, target_file)):
@@ -539,8 +539,15 @@ class PortalHandler(BaseHTTPRequestHandler):
                         filename += ".json"
                         
                     clean_name = os.path.basename(filename)
-                    c_dir = os.path.join(os.path.abspath("."), "Courses")
-                    os.makedirs(c_dir, exist_ok=True)
+                    c_dir = None
+                    for c_folder in ("courses", "Courses", "cources"):
+                        test_dir = os.path.join(os.path.abspath("."), c_folder)
+                        if os.path.exists(test_dir):
+                            c_dir = test_dir
+                            break
+                    if not c_dir:
+                        c_dir = os.path.join(os.path.abspath("."), "courses")
+                        os.makedirs(c_dir, exist_ok=True)
                     
                     target_path = os.path.join(c_dir, clean_name)
                     with open(target_path, "w", encoding="utf-8") as f:

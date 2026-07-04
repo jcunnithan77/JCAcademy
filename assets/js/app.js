@@ -258,9 +258,10 @@ window.onload = async () => {
             const targetJson = urlParams.get('file') || urlParams.get('course') || urlParams.get('json');
             let res;
             if (targetJson) {
-                res = await fetch(`Courses/${targetJson}`).catch(() => fetch(`cources/${targetJson}`)).catch(() => fetch(targetJson));
+                res = await fetch(`courses/${targetJson}`).catch(() => fetch(`Courses/${targetJson}`)).catch(() => fetch(`cources/${targetJson}`)).catch(() => fetch(targetJson));
             } else {
                 res = await fetch('course_data.json')
+                    .catch(() => fetch('courses/01 - Python, Data Science & ML Bootcamp.json'))
                     .catch(() => fetch('Courses/01 - Python, Data Science & ML Bootcamp.json'))
                     .catch(() => fetch('Courses/sss.json'))
                     .catch(() => fetch('cources/01 - Python, Data Science & ML Bootcamp.json'))
