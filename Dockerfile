@@ -2,7 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY server.py /app/server.py
+# Copy server, UI dashboards, and frontend assets
+COPY server.py index.html tutorial_dashboard.html /app/
+COPY assets/ /app/assets/
+
+# Copy standalone JSON tutorial course data
+COPY Courses/ /app/Courses/
 
 # Create mount point for courses
 RUN mkdir -p /app/courses
