@@ -176,14 +176,14 @@ PORTAL_HTML = """<!DOCTYPE html>
 <body>
     <header>
         <h1>🚀 Universal AI Bootcamp Hub</h1>
-        <p class="subtitle">Select any course directory below to launch its interactive study guide dashboard or browse raw materials.</p>
+        <p class="subtitle">Select any course below to launch its interactive study guide dashboard and AI tutor notes.</p>
         <div class="search-box">
             <input type="text" id="search" placeholder="Search across course folders..." onkeyup="filterCourses()">
         </div>
     </header>
 
     <div class="grid" id="course-grid">
-        <p style="color:var(--text-mut); grid-column: 1/-1; text-align:center;">Scanning mounted course directories...</p>
+        <p style="color:var(--text-mut); grid-column: 1/-1; text-align:center;">Loading interactive curricula...</p>
     </div>
 
     <script>
@@ -191,26 +191,14 @@ PORTAL_HTML = """<!DOCTYPE html>
 
         async function fetchCourses() {
             try {
-                const [jsonsRes, coursesRes] = await Promise.all([
-                    fetch('/api/course_jsons').catch(() => ({ json: () => [] })),
-                    fetch('/api/courses').catch(() => ({ json: () => [] }))
-                ]);
+                const jsonsRes = await fetch('/api/course_jsons').catch(() => ({ json: () => [] }));
                 const jsons = await jsonsRes.json();
-                const dirs = await coursesRes.json();
 
-                allItems = [
-                    ...jsons.map(j => ({
-                        name: j.title,
-                        filename: j.filename,
-                        is_json: true,
-                        subdirs: 'JSON',
-                        files: 'Tutorial'
-                    })),
-                    ...dirs.map(d => ({
-                        ...d,
-                        is_json: false
-                    }))
-                ];
+                allItems = jsons.map(j => ({
+                    name: j.title,
+                    filename: j.filename,
+                    is_json: true
+                }));
                 renderCourses(allItems);
             } catch (err) {
                 document.getElementById('course-grid').innerHTML = `<p style="color:#ef4444; grid-column: 1/-1; text-align:center;">Error loading courses: ${err.message}</p>`;
@@ -220,49 +208,27 @@ PORTAL_HTML = """<!DOCTYPE html>
         function renderCourses(courses) {
             const grid = document.getElementById('course-grid');
             if (courses.length === 0) {
-                grid.innerHTML = `<p style="color:var(--text-mut); grid-column: 1/-1; text-align:center;">No course directories found.</p>`;
+                grid.innerHTML = `<p style="color:var(--text-mut); grid-column: 1/-1; text-align:center;">No interactive courses found.</p>`;
                 return;
             }
-            grid.innerHTML = courses.map(c => {
-                if (c.is_json) {
-                    return `
-                        <div class="card" data-title="${c.name.toLowerCase()}">
-                            <div>
-                                <div class="card-header">
-                                    <div class="icon">📚</div>
-                                    <span class="badge ready" style="background:#059669;">JSON Tutorial</span>
-                                </div>
-                                <h3>${c.name}</h3>
-                                <div class="stats">
-                                    <span>⚡ Interactive Course</span>
-                                    <span>📄 ${c.filename}</span>
-                                </div>
-                            </div>
-                            <a href="/tutorial_dashboard.html?file=${encodeURIComponent(c.filename)}" target="_blank" class="btn">
-                                Launch Tutorial ↗
-                            </a>
+            grid.innerHTML = courses.map(c => `
+                <div class="card" data-title="${c.name.toLowerCase()}">
+                    <div>
+                        <div class="card-header">
+                            <div class="icon">📚</div>
+                            <span class="badge ready" style="background:#059669;">JSON Tutorial</span>
                         </div>
-                    `;
-                }
-                return `
-                    <div class="card" data-title="${c.name.toLowerCase()}">
-                        <div>
-                            <div class="card-header">
-                                <div class="icon">${c.has_dashboard ? '⚡' : '📁'}</div>
-                                <span class="badge ${c.has_dashboard ? 'ready' : 'folder'}">${c.has_dashboard ? 'Interactive UI' : 'Raw Folder'}</span>
-                            </div>
-                            <h3>${c.name}</h3>
-                            <div class="stats">
-                                <span>📂 ${c.subdirs} Sections</span>
-                                <span>📄 ${c.files} Files</span>
-                            </div>
+                        <h3>${c.name}</h3>
+                        <div class="stats">
+                            <span>⚡ Interactive Course</span>
+                            <span>📄 ${c.filename}</span>
                         </div>
-                        <a href="/courses/${encodeURIComponent(c.name)}/${c.has_dashboard ? 'tutorial_dashboard.html' : ''}" target="_blank" class="btn ${c.has_dashboard ? '' : 'secondary'}">
-                            ${c.has_dashboard ? 'Launch Dashboard ↗' : 'Browse Folder ↗'}
-                        </a>
                     </div>
-                `;
-            }).join('');
+                    <a href="/tutorial_dashboard.html?file=${encodeURIComponent(c.filename)}" target="_blank" class="btn">
+                        Launch Tutorial ↗
+                    </a>
+                </div>
+            `).join('');
         }
 
         function filterCourses() {
@@ -319,7 +285,7 @@ class PortalHandler(BaseHTTPRequestHandler):
             
         if path == "/api/course_jsons":
             json_files = []
-            for c_folder in ("courses", "Courses", "cources"):
+            for c_folder in ("Courses", "courses", "cources"):
                 c_dir = os.path.join(os.path.abspath("."), c_folder)
                 if os.path.exists(c_dir):
                     for f in sorted(os.listdir(c_dir)):
@@ -332,130 +298,79 @@ class PortalHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(json_files).encode("utf-8"))
             return
             
-        if path.startswith("/courses/"):
-            rel_path = path[len("/courses/"):].lstrip("/")
-            file_path = os.path.join(COURSES_DIR, rel_path)
-            parts = rel_path.split("/")
-            course_name = parts[0] if parts else ""
-            course_dir = os.path.join(COURSES_DIR, course_name)
-            sub_path = "/".join(parts[1:]) if len(parts) > 1 else ""
-            
-            # If directory requested, auto-redirect or serve index
-            if os.path.isdir(file_path):
-                dash_path = os.path.join(file_path, "tutorial_dashboard.html")
-                common_dash = os.path.join(COURSES_DIR, "01 - Python, Data Science & ML Bootcamp", "tutorial_dashboard.html")
-                if os.path.exists(dash_path):
-                    file_path = dash_path
-                elif os.path.exists(common_dash):
-                    file_path = common_dash
-                else:
-                    self.send_response(200)
-                    self.send_header("Content-Type", "text/html; charset=utf-8")
-                    self.end_headers()
-                    listing = f"<h2>Directory Listing: {rel_path}</h2><ul>"
-                    for p in sorted(os.listdir(file_path)):
-                        listing += f'<li><a href="/courses/{rel_path}/{p}">{p}</a></li>'
-                    listing += "</ul>"
-                    self.wfile.write(listing.encode("utf-8"))
-                    return
-
-            # Check if course_data.json is requested
-            if sub_path in ("course_data.json", "assets/js/course_data.json"):
-                if os.path.exists(file_path) and os.path.isfile(file_path):
-                    pass # Will be served below
-                else:
-                    # Dynamically generate course_data.json for this course directory
-                    sections = []
-                    if os.path.exists(course_dir):
-                        for item in sorted(os.listdir(course_dir)):
-                            sub_dir = os.path.join(course_dir, item)
-                            if os.path.isdir(sub_dir) and not item.startswith(".") and item != "assets":
-                                files = []
-                                for r, _, fs in os.walk(sub_dir):
-                                    for fname in sorted(fs):
-                                        ext = fname.split(".")[-1].lower() if "." in fname else ""
-                                        if ext in {"vtt", "pdf", "ipynb", "py", "zip", "csv"}:
-                                            rp = os.path.relpath(os.path.join(r, fname), course_dir).replace("\\", "/")
-                                            files.append({"name": fname, "path": rp, "type": ext})
-                                sid = "s" + item[:2] if len(item) >= 2 and item[:2].isdigit() else "s_" + str(len(sections)+1)
-                                snum = item[:2] if len(item) >= 2 and item[:2].isdigit() else str(len(sections)+1)
-                                stitle = item[5:] if len(item) > 5 and item[2:5] == " - " else item
-                                sections.append({
-                                    "id": sid,
-                                    "num": snum,
-                                    "title": stitle,
-                                    "overview": f"Comprehensive study module for {stitle}.",
-                                    "content": f'<h2 class="sh">{stitle}</h2><div class="card" style="margin-top:16px;"><h3>Module Overview</h3><p class="tb">Explore the interactive lecture materials, notebooks, and reference files for <strong>{stitle}</strong>.</p></div>',
-                                    "read_mins": 15,
-                                    "files": files,
-                                    "vtt": sum(1 for f in files if f["type"] == "vtt"),
-                                    "pdf": sum(1 for f in files if f["type"] == "pdf"),
-                                    "nb": sum(1 for f in files if f["type"] == "ipynb"),
-                                    "py": sum(1 for f in files if f["type"] == "py")
-                                })
-                    if not sections:
-                        sections.append({
-                            "id": "s01", "num": "01", "title": course_name, "overview": "Course Overview",
-                            "content": f'<h2 class="sh">{course_name}</h2><p class="tb">Welcome to {course_name}.</p>',
-                            "read_mins": 5, "files": []
-                        })
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json; charset=utf-8")
-                    self.end_headers()
-                    self.wfile.write(json.dumps(sections, indent=4).encode("utf-8"))
-                    return
-
-            # Fallback to common assets if requested file does not exist locally
-            if not os.path.exists(file_path):
-                common_fallback = os.path.join(COURSES_DIR, "01 - Python, Data Science & ML Bootcamp", sub_path)
-                if os.path.exists(common_fallback) and os.path.isfile(common_fallback):
-                    file_path = common_fallback
-                        
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                content_type, _ = mimetypes.guess_type(file_path)
-                if not content_type:
-                    content_type = "application/octet-stream"
-                self.send_response(200)
-                self.send_header("Content-Type", content_type)
-                self.end_headers()
-                with open(file_path, "rb") as f:
-                    self.wfile.write(f.read())
-                return
+        # Clean path and get relative path
+        unquoted_path = urllib.parse.unquote(path.lstrip("/"))
+        rel_path = unquoted_path
+        for prefix in ("courses/", "Courses/", "cources/"):
+            if rel_path.startswith(prefix):
+                rel_path = rel_path[len(prefix):].lstrip("/")
+                break
                 
-        # Serve files directly from the current server directory (docker-portal)
-        local_rel = urllib.parse.unquote(path.lstrip("/"))
-        if local_rel == "tutorial_dashboard.html":
-            local_path = os.path.join(os.path.abspath("."), "tutorial_dashboard.html")
-            if os.path.exists(local_path):
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.end_headers()
-                with open(local_path, "rb") as f:
-                    self.wfile.write(f.read())
-                return
-        elif local_rel in ("course_data.json", "assets/js/course_data.json"):
-            for c_folder in ("courses", "Courses", "cources"):
+        # 1. Handle course_data.json fallback or any requested JSON course file
+        if rel_path in ("course_data.json", "assets/js/course_data.json") or unquoted_path in ("course_data.json", "assets/js/course_data.json") or rel_path.endswith(".json") or unquoted_path.endswith(".json"):
+            req_name = os.path.basename(rel_path) if rel_path.endswith(".json") and not rel_path in ("course_data.json", "assets/js/course_data.json") else None
+            
+            for c_folder in ("Courses", "courses", "cources", "."):
                 c_dir = os.path.join(os.path.abspath("."), c_folder)
                 if os.path.exists(c_dir):
-                    jsons = [f for f in sorted(os.listdir(c_dir)) if f.endswith(".json")]
-                    if jsons:
-                        j_path = os.path.join(c_dir, jsons[0])
-                        self.send_response(200)
-                        self.send_header("Content-Type", "application/json; charset=utf-8")
-                        self.end_headers()
-                        with open(j_path, "rb") as f:
-                            self.wfile.write(f.read())
-                        return
-        else:
-            local_path = os.path.join(os.path.abspath("."), local_rel)
-            if os.path.exists(local_path) and os.path.isfile(local_path):
-                content_type, _ = mimetypes.guess_type(local_path)
+                    if req_name:
+                        test_p = os.path.join(c_dir, req_name) if c_folder != "." else os.path.join(os.path.abspath("."), req_name)
+                        if os.path.exists(test_p) and os.path.isfile(test_p):
+                            self.send_response(200)
+                            self.send_header("Content-Type", "application/json; charset=utf-8")
+                            self.end_headers()
+                            with open(test_p, "rb") as f:
+                                self.wfile.write(f.read())
+                            return
+                    else:
+                        jsons = [f for f in sorted(os.listdir(c_dir)) if f.endswith(".json")]
+                        if jsons:
+                            j_path = os.path.join(c_dir, jsons[0])
+                            self.send_response(200)
+                            self.send_header("Content-Type", "application/json; charset=utf-8")
+                            self.end_headers()
+                            with open(j_path, "rb") as f:
+                                self.wfile.write(f.read())
+                            return
+
+        # 2. Intelligent Path Mapping: Search across all mapped directories (root, Courses/, COURSES_DIR, .., and parent subfolders)
+        candidate_paths = [
+            os.path.join(os.path.abspath("."), unquoted_path),
+            os.path.join(os.path.abspath("."), rel_path)
+        ]
+        
+        for c_folder in ("Courses", "courses", "cources"):
+            candidate_paths.append(os.path.join(os.path.abspath("."), c_folder, rel_path))
+            candidate_paths.append(os.path.join(os.path.abspath("."), c_folder, os.path.basename(rel_path)))
+            
+        for base_dir in (COURSES_DIR, os.path.abspath("..")):
+            if os.path.exists(base_dir):
+                candidate_paths.append(os.path.join(base_dir, rel_path))
+                candidate_paths.append(os.path.join(base_dir, unquoted_path))
+                try:
+                    for sub in os.listdir(base_dir):
+                        sub_full = os.path.join(base_dir, sub)
+                        if os.path.isdir(sub_full) and not sub.startswith(".") and sub != "docker-portal":
+                            candidate_paths.append(os.path.join(sub_full, rel_path))
+                            if rel_path.endswith(".json"):
+                                candidate_paths.append(os.path.join(sub_full, os.path.basename(rel_path)))
+                except Exception:
+                    pass
+
+        for test_file in candidate_paths:
+            if os.path.exists(test_file) and os.path.isfile(test_file):
+                content_type, _ = mimetypes.guess_type(test_file)
                 if not content_type:
-                    content_type = "application/octet-stream"
+                    if test_file.endswith(".json"):
+                        content_type = "application/json; charset=utf-8"
+                    elif test_file.endswith(".vtt"):
+                        content_type = "text/vtt; charset=utf-8"
+                    else:
+                        content_type = "application/octet-stream"
                 self.send_response(200)
                 self.send_header("Content-Type", content_type)
                 self.end_headers()
-                with open(local_path, "rb") as f:
+                with open(test_file, "rb") as f:
                     self.wfile.write(f.read())
                 return
 
@@ -478,7 +393,7 @@ class PortalHandler(BaseHTTPRequestHandler):
                     note_content = data.get("content", "")
 
                     j_path = None
-                    for c_folder in ("courses", "Courses", "cources"):
+                    for c_folder in ("Courses", "courses", "cources"):
                         c_dir = os.path.join(os.path.abspath("."), c_folder)
                         if os.path.exists(c_dir):
                             if target_file and os.path.exists(os.path.join(c_dir, target_file)):
@@ -540,13 +455,13 @@ class PortalHandler(BaseHTTPRequestHandler):
                         
                     clean_name = os.path.basename(filename)
                     c_dir = None
-                    for c_folder in ("courses", "Courses", "cources"):
+                    for c_folder in ("Courses", "courses", "cources"):
                         test_dir = os.path.join(os.path.abspath("."), c_folder)
                         if os.path.exists(test_dir):
                             c_dir = test_dir
                             break
                     if not c_dir:
-                        c_dir = os.path.join(os.path.abspath("."), "courses")
+                        c_dir = os.path.join(os.path.abspath("."), "Courses")
                         os.makedirs(c_dir, exist_ok=True)
                     
                     target_path = os.path.join(c_dir, clean_name)

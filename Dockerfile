@@ -9,10 +9,7 @@ COPY assets/ /app/assets/
 # Copy standalone JSON tutorial course data
 COPY Courses/ /app/Courses/
 
-# Create mount point for courses
-RUN mkdir -p /app/courses
-
-ENV COURSES_DIR=/app/courses
+ENV COURSES_DIR=/app/Courses
 ENV PORT=8080
 
 EXPOSE 8080

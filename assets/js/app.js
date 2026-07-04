@@ -256,22 +256,39 @@ window.onload = async () => {
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const targetJson = urlParams.get('file') || urlParams.get('course') || urlParams.get('json');
+            
+            async function fetchFirstOk(urls) {
+                for (const url of urls) {
+                    try {
+                        const r = await fetch(url);
+                        if (r.ok) return r;
+                    } catch (e) {}
+                }
+                return null;
+            }
+
             let res;
             if (targetJson) {
-                res = await fetch(`courses/${targetJson}`).catch(() => fetch(`Courses/${targetJson}`)).catch(() => fetch(`cources/${targetJson}`)).catch(() => fetch(targetJson));
+                res = await fetchFirstOk([
+                    `Courses/${targetJson}`,
+                    `courses/${targetJson}`,
+                    `cources/${targetJson}`,
+                    targetJson
+                ]);
             } else {
-                res = await fetch('course_data.json')
-                    .catch(() => fetch('courses/01 - Python, Data Science & ML Bootcamp.json'))
-                    .catch(() => fetch('Courses/01 - Python, Data Science & ML Bootcamp.json'))
-                    .catch(() => fetch('Courses/sss.json'))
-                    .catch(() => fetch('cources/01 - Python, Data Science & ML Bootcamp.json'))
-                    .catch(() => fetch('assets/js/course_data.json'));
+                res = await fetchFirstOk([
+                    'course_data.json',
+                    'Courses/01 - Python, Data Science & ML Bootcamp.json',
+                    'courses/01 - Python, Data Science & ML Bootcamp.json',
+                    'cources/01 - Python, Data Science & ML Bootcamp.json',
+                    'assets/js/course_data.json'
+                ]);
             }
-            if (res.ok) {
+            if (res && res.ok) {
                 courseData = await res.json();
                 window.courseData = courseData;
             } else {
-                throw new Error(`HTTP ${res.status}`);
+                throw new Error(`HTTP ${res ? res.status : 'Not Found'}`);
             }
         } catch (err) {
             console.error("Failed to fetch course_data.json:", err);

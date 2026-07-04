@@ -1,13 +1,12 @@
 # 🚀 Universal Multi-Tutorial ML & AI Hub (Docker Deployable)
 
-This containerized deployment solution serves all your tutorial folders from a single, stunning glassmorphism dashboard. It automatically detects and hosts multiple tutorial directories mounted from your host system.
+This containerized deployment solution serves all your interactive JSON masterclasses from a single, stunning glassmorphism dashboard. It automatically detects and hosts structured tutorial curricula from the `Courses/` directory.
 
 ## 🌟 Key Features
-- **Zero-Config Discovery**: Automatically detects any folder inside `D:\JC\Personal\Study\ML\courses` (e.g., `01 - Python...`, `02 - Agentic AI...`, `Python Mega Project...`).
-- **Interactive UI Launching**: If a folder contains `tutorial_dashboard.html`, it launches directly into the interactive study guide.
-- **Raw File Browsing**: For folders without a dashboard, it provides clean, auto-generated file indexes to browse notebooks, zip files, and transcripts.
+- **Zero-Config JSON Discovery**: Automatically detects any structured course JSON inside `Courses/` (e.g., `01 - Python...json`, `market_profile_tutorial_data.json`).
+- **Interactive UI & AI Tutor**: Launches directly into an interactive study guide featuring video summaries, code notebooks, resources, and AI tutor notes.
+- **Standalone & Portable**: Self-contained Docker deployment without needing external host directory mounts or raw folder browsing.
 - **Lightweight & Fast**: Built on Python 3.11 Slim with minimal footprint.
-
 ---
 
 ## 🛠️ How to Deploy (Docker Compose)

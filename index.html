@@ -438,21 +438,14 @@
     <div class="hero">
         <div class="badge-pill">✨ Multi-Course Portal 2.0</div>
         <h1>AI & ML Learning Ecosystem</h1>
-        <p class="subtitle">Clearly differentiated masterclasses. Choose structured interactive JSON curricula for guided video lectures & study notes, or explore raw project repositories.</p>
+        <p class="subtitle">Structured masterclasses and interactive curricula. Select any JSON course below for guided video lectures, study notes, and AI tutor insights.</p>
 
         <div class="stats-bar">
             <div class="stat-card">
                 <div class="stat-icon">📚</div>
                 <div class="stat-info">
                     <h4 id="stat-tutorials">0</h4>
-                    <span>Interactive Curricula</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📁</div>
-                <div class="stat-info">
-                    <h4 id="stat-repos">0</h4>
-                    <span>Folder Repositories</span>
+                    <span>Interactive Courses</span>
                 </div>
             </div>
             <div class="stat-card">
@@ -477,9 +470,7 @@
         </div>
 
         <div class="filter-tabs">
-            <button class="tab-btn active" onclick="setFilter('all', this)">🌟 All Resources</button>
-            <button class="tab-btn" onclick="setFilter('tutorials', this)">⚡ Interactive Tutorials</button>
-            <button class="tab-btn" onclick="setFilter('repos', this)">📁 Folder Repositories</button>
+            <button class="tab-btn active" onclick="setFilter('all', this)">🌟 All Courses</button>
             <button class="tab-btn" onclick="setFilter('trading', this)">📈 Trading & Finance</button>
             <button class="tab-btn" onclick="setFilter('ml', this)">🤖 Machine Learning & AI</button>
         </div>
@@ -497,31 +488,16 @@
             </div>
         </div>
 
-        <!-- Folder Repositories Section -->
-        <div id="section-repos-wrap" style="margin-top: 50px;">
-            <div class="section-header">
-                <h2>📁 Mounted Repositories & Raw Folders</h2>
-                <span class="section-badge" id="count-repos">0 folders</span>
-            </div>
-            <div class="grid" id="grid-repos">
-                <p style="color:var(--text-muted); grid-column:1/-1;">Loading mounted repositories...</p>
-            </div>
-        </div>
     </div>
 
     <script>
         let allTutorials = [];
-        let allRepos = [];
         let currentFilter = 'all';
 
         async function initPortal() {
             try {
-                const [jsonsRes, reposRes] = await Promise.all([
-                    fetch('/api/course_jsons').catch(() => ({ json: () => [] })),
-                    fetch('/api/courses').catch(() => ({ json: () => [] }))
-                ]);
+                const jsonsRes = await fetch('/api/course_jsons').catch(() => ({ json: () => [] }));
                 const jsons = await jsonsRes.json();
-                const dirs = await reposRes.json();
 
                 // Process tutorials
                 allTutorials = jsons.map(j => {
@@ -547,28 +523,7 @@
                     };
                 });
 
-                // Process repos
-                allRepos = dirs.map(d => {
-                    const dLow = d.name.toLowerCase();
-                    const isTrading = dLow.includes("market") || dLow.includes("profile") || dLow.includes("trade");
-                    const isML = dLow.includes("python") || dLow.includes("ml") || dLow.includes("bootcamp");
-
-                    return {
-                        id: d.name,
-                        title: d.name,
-                        type: 'repo',
-                        category: isTrading ? 'trading' : (isML ? 'ml' : 'general'),
-                        subdirs: d.subdirs,
-                        files: d.files,
-                        has_dashboard: d.has_dashboard,
-                        desc: `Mounted course repository containing ${d.subdirs} module folders and ${d.files} study materials.`,
-                        tags: ["Mounted Directory", `${d.subdirs} Modules`, `${d.files} Files`]
-                    };
-                });
-
                 document.getElementById('stat-tutorials').textContent = allTutorials.length;
-                document.getElementById('stat-repos').textContent = allRepos.length;
-
                 filterAndRender();
             } catch (err) {
                 console.error("Error loading courses:", err);
@@ -586,8 +541,6 @@
             const query = document.getElementById('search-input').value.toLowerCase().trim();
 
             const matchFilter = (item) => {
-                if (currentFilter === 'tutorials' && item.type !== 'tutorial') return false;
-                if (currentFilter === 'repos' && item.type !== 'repo') return false;
                 if (currentFilter === 'trading' && item.category !== 'trading') return false;
                 if (currentFilter === 'ml' && item.category !== 'ml') return false;
                 return true;
@@ -599,76 +552,34 @@
             };
 
             const filteredTutorials = allTutorials.filter(t => matchFilter(t) && matchQuery(t));
-            const filteredRepos = allRepos.filter(r => matchFilter(r) && matchQuery(r));
 
             // Render Tutorials
-            const tutWrap = document.getElementById('section-tutorials-wrap');
             const tutGrid = document.getElementById('grid-tutorials');
             document.getElementById('count-tutorials').textContent = `${filteredTutorials.length} courses`;
 
-            if (currentFilter === 'repos' || (filteredTutorials.length === 0 && filteredRepos.length > 0 && currentFilter !== 'tutorials')) {
-                tutWrap.style.display = 'none';
+            if (filteredTutorials.length === 0) {
+                tutGrid.innerHTML = `<div class="empty-state">No interactive tutorials match your criteria.</div>`;
             } else {
-                tutWrap.style.display = 'block';
-                if (filteredTutorials.length === 0) {
-                    tutGrid.innerHTML = `<div class="empty-state">No interactive tutorials match your criteria.</div>`;
-                } else {
-                    tutGrid.innerHTML = filteredTutorials.map(t => `
-                        <div class="card tutorial">
-                            <div>
-                                <div class="card-top">
-                                    <div class="card-icon-wrap">📚</div>
-                                    <span class="type-pill">⚡ Interactive Curriculum</span>
-                                </div>
-                                <h3>${t.title}</h3>
-                                <p class="desc">${t.desc}</p>
-                                <div class="tags-list">
-                                    ${t.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                                </div>
+                tutGrid.innerHTML = filteredTutorials.map(t => `
+                    <div class="card tutorial">
+                        <div>
+                            <div class="card-top">
+                                <div class="card-icon-wrap">📚</div>
+                                <span class="type-pill">⚡ Interactive Curriculum</span>
                             </div>
-                            <div class="action-row">
-                                <a href="/tutorial_dashboard.html?file=${encodeURIComponent(t.filename)}" target="_blank" class="btn btn-launch">
-                                    <span>Launch Interactive Hub</span> ↗
-                                </a>
+                            <h3>${t.title}</h3>
+                            <p class="desc">${t.desc}</p>
+                            <div class="tags-list">
+                                ${t.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                             </div>
                         </div>
-                    `).join('');
-                }
-            }
-
-            // Render Repos
-            const repoWrap = document.getElementById('section-repos-wrap');
-            const repoGrid = document.getElementById('grid-repos');
-            document.getElementById('count-repos').textContent = `${filteredRepos.length} folders`;
-
-            if (currentFilter === 'tutorials' || (filteredRepos.length === 0 && filteredTutorials.length > 0 && currentFilter !== 'repos')) {
-                repoWrap.style.display = 'none';
-            } else {
-                repoWrap.style.display = 'block';
-                if (filteredRepos.length === 0) {
-                    repoGrid.innerHTML = `<div class="empty-state">No repositories match your criteria.</div>`;
-                } else {
-                    repoGrid.innerHTML = filteredRepos.map(r => `
-                        <div class="card repo">
-                            <div>
-                                <div class="card-top">
-                                    <div class="card-icon-wrap">📁</div>
-                                    <span class="type-pill">📂 Mounted Directory</span>
-                                </div>
-                                <h3>${r.title}</h3>
-                                <p class="desc">${r.desc}</p>
-                                <div class="tags-list">
-                                    ${r.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                                </div>
-                            </div>
-                            <div class="action-row">
-                                <a href="/courses/${encodeURIComponent(r.title)}/${r.has_dashboard ? 'tutorial_dashboard.html' : ''}" target="_blank" class="btn btn-repo">
-                                    <span>Launch UI</span> ↗
-                                </a>
-                            </div>
+                        <div class="action-row">
+                            <a href="/tutorial_dashboard.html?file=${encodeURIComponent(t.filename)}" target="_blank" class="btn btn-launch">
+                                <span>Launch Interactive Hub</span> ↗
+                            </a>
                         </div>
-                    `).join('');
-                }
+                    </div>
+                `).join('');
             }
         }
 
