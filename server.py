@@ -438,6 +438,72 @@ class PortalHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
                     return
+        elif parsed.path == "/api/manage_ai_note":
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                try:
+                    data = json.loads(post_data.decode('utf-8'))
+                    target_file = data.get("file")
+                    section_id = data.get("section_id")
+                    action = data.get("action") # "rename", "delete"
+                    new_title = data.get("title")
+                    
+                    try:
+                        note_idx = int(data.get("index", -1))
+                    except (ValueError, TypeError):
+                        note_idx = -1
+
+                    j_path = None
+                    for c_folder in ("Courses", "courses", "cources"):
+                        c_dir = os.path.join(os.path.abspath("."), c_folder)
+                        if os.path.exists(c_dir):
+                            if target_file and os.path.exists(os.path.join(c_dir, target_file)):
+                                j_path = os.path.join(c_dir, target_file)
+                                break
+                            jsons = [f for f in sorted(os.listdir(c_dir)) if f.endswith(".json")]
+                            if jsons:
+                                j_path = os.path.join(c_dir, jsons[0])
+                                break
+                    
+                    if j_path and os.path.exists(j_path):
+                        with open(j_path, "r", encoding="utf-8") as f:
+                            course_json = json.load(f)
+                        
+                        target_sec = None
+                        for sec in course_json:
+                            if sec.get("id") == section_id:
+                                target_sec = sec
+                                break
+                        if not target_sec and course_json:
+                            target_sec = course_json[0]
+                            
+                        if target_sec and "ai_notes" in target_sec and 0 <= note_idx < len(target_sec["ai_notes"]):
+                            if action == "rename" and new_title:
+                                target_sec["ai_notes"][note_idx]["title"] = new_title
+                            elif action == "delete":
+                                target_sec["ai_notes"].pop(note_idx)
+                            
+                            with open(j_path, "w", encoding="utf-8") as f:
+                                json.dump(course_json, f, indent=4)
+                                
+                            self.send_response(200)
+                            self.send_header("Content-Type", "application/json")
+                            self.end_headers()
+                            self.wfile.write(json.dumps({"success": True, "notes": target_sec["ai_notes"]}).encode("utf-8"))
+                            return
+                        else:
+                            self.send_response(400)
+                            self.send_header("Content-Type", "application/json")
+                            self.end_headers()
+                            self.wfile.write(json.dumps({"error": "Note index out of range or section not found"}).encode("utf-8"))
+                            return
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                    return
         elif parsed.path == "/api/upload_tutorial":
             content_length = int(self.headers.get('Content-Length', 0))
             if content_length > 0:

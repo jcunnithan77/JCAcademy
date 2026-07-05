@@ -472,7 +472,16 @@ function updateChatMessage(msgId, newText) {
             saveBtn.style.fontSize = "0.82rem";
             saveBtn.style.fontWeight = "600";
             saveBtn.innerHTML = "➕ Add to Section Study Notes";
-            saveBtn.onclick = () => saveAINoteToSection(lastUserPrompt || "AI Tutor Explanation", newText, saveBtn);
+            saveBtn.onclick = () => {
+                const defaultTitle = lastUserPrompt || "Vajre Explanation";
+                const cleanDefault = defaultTitle.length > 50 ? defaultTitle.substring(0, 50) + "..." : defaultTitle;
+                const customTitle = prompt("Name this Study Note:", cleanDefault);
+                if (customTitle !== null && customTitle.trim() !== "") {
+                    saveAINoteToSection(customTitle.trim(), newText, saveBtn);
+                } else if (customTitle !== null) {
+                    saveAINoteToSection("Vajre Insight", newText, saveBtn);
+                }
+            };
             
             btnBox.appendChild(saveBtn);
             msgDiv.appendChild(btnBox);
@@ -550,7 +559,7 @@ function clearAIChatHistory() {
         historyBox.innerHTML = `
             <div class="ai-welcome">
                 <span class="ai-welcome-icon">⚡</span>
-                <h4>ML Bootcamp AI Tutor Ready</h4>
+                <h4>Vajre AI Ready</h4>
                 <p>Highlight any text in the tutorial or ask questions directly below for instant deep-dives, code snippets, and explanations!</p>
             </div>
         `;

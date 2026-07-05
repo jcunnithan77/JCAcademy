@@ -132,7 +132,7 @@ function renderSavedAINotes(notes) {
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
                 <span style="font-size:1.5rem; background:rgba(16,185,129,0.15); padding:8px; border-radius:10px; border:1px solid rgba(16,185,129,0.3);">🤖</span>
                 <div>
-                    <h3 style="font-family:'Outfit',sans-serif; font-size:1.3rem; color:#34d399; margin:0;">Saved AI Tutor Insights & Study Notes</h3>
+                    <h3 style="font-family:'Outfit',sans-serif; font-size:1.3rem; color:#34d399; margin:0;">Saved Vajre Insights & Study Notes</h3>
                     <span style="font-size:0.85rem; color:#94a3b8;">Insights copied and saved directly into this section's JSON</span>
                 </div>
             </div>
@@ -141,14 +141,24 @@ function renderSavedAINotes(notes) {
     notes.forEach((note, idx) => {
         const noteId = `ai-saved-note-${idx}`;
         const formatted = typeof formatMarkdown === "function" ? formatMarkdown(note.content) : note.content.replace(/\n/g, '<br>');
+        const noteTitle = note.title || 'Vajre Insight';
+        const safeTitle = noteTitle.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         html += `
             <div class="ai-note-tile card" style="background:rgba(15,23,42,0.85); border:1px solid rgba(16,185,129,0.35); border-radius:14px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <span style="font-size:1.3rem;">💡</span>
                         <div>
-                            <h4 style="color:#f8fafc; font-size:1.05rem; font-weight:600; margin:0 0 4px 0;">${note.title || 'AI Insight'}</h4>
-                            <span style="font-size:0.75rem; color:#34d399; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:12px; border:1px solid rgba(16,185,129,0.3);">Copied to JSON</span>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <h4 style="color:#f8fafc; font-size:1.05rem; font-weight:600; margin:0;">${noteTitle}</h4>
+                                <button onclick="renameSavedAINote(${idx}, '${safeTitle}')" title="Rename Note Title" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:all 0.2s; display:flex; align-items:center; gap:4px;">
+                                    ✏️ Rename
+                                </button>
+                                <button onclick="deleteSavedAINote(${idx})" title="Delete Saved Note" style="background:rgba(248,113,113,0.15); color:#f87171; border:1px solid rgba(248,113,113,0.3); padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:all 0.2s; display:flex; align-items:center; gap:4px;">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                            <span style="font-size:0.75rem; color:#34d399; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:12px; border:1px solid rgba(16,185,129,0.3); display:inline-block; margin-top:6px;">Copied to JSON</span>
                         </div>
                     </div>
                     <button onclick="toggleNoteExpand('${noteId}', this)" style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s;">
@@ -167,6 +177,60 @@ function renderSavedAINotes(notes) {
     `;
     return html;
 }
+
+async function renameSavedAINote(idx, oldTitle) {
+    const newTitle = prompt("Enter new title for this study note:", oldTitle);
+    if (newTitle === null || newTitle.trim() === "" || newTitle.trim() === oldTitle) return;
+    
+    await manageAINoteAction(idx, "rename", { title: newTitle.trim() });
+}
+
+async function deleteSavedAINote(idx) {
+    if (!confirm("Are you sure you want to delete this saved study note?")) return;
+    
+    await manageAINoteAction(idx, "delete", {});
+}
+
+async function manageAINoteAction(idx, action, extraData = {}) {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetFile = urlParams.get('file') || urlParams.get('course') || urlParams.get('json');
+        
+        const res = await fetch("/api/manage_ai_note", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                file: targetFile,
+                section_id: typeof activeSectionId !== "undefined" ? activeSectionId : null,
+                index: idx,
+                action: action,
+                ...extraData
+            })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (typeof showToast === "function") {
+                showToast(action === "rename" ? "✅ Note renamed successfully!" : "🗑️ Note deleted successfully!");
+            }
+            if (typeof window.courseData !== "undefined" && typeof activeSectionId !== "undefined") {
+                const sec = window.courseData.find(c => c.id === activeSectionId);
+                if (sec) {
+                    sec.ai_notes = data.notes;
+                    if (typeof setSectionActive === "function") {
+                        setSectionActive(activeSectionId);
+                    }
+                }
+            }
+        } else {
+            alert("Failed to " + action + " note.");
+        }
+    } catch (e) {
+        console.error("Error managing note:", e);
+        alert("Error: " + e.message);
+    }
+}
+
 
 function openResourcesModal(id) {
     const data = courseData.find(d => d.id === id);

@@ -70,7 +70,7 @@
                     <button onclick="saveApiKey()">Save</button>
                 </div>
                 <button class="quick-action-btn ai-btn" onclick="toggleAIChatDrawer(true)">
-                    <span>✨</span> AI Tutor
+                    <span>✨</span> Vajre
                 </button>
                 <button class="quick-action-btn" onclick="toggleProgressOfActive()">
                     <span>✅</span> Mark Complete
@@ -83,7 +83,7 @@
 
         <!-- FLOATING SELECTION POPOVER -->
         <div id="ai-selection-popover" class="ai-selection-popover" onclick="askAIAboutSelection()">
-            <span>✨</span> Explain Selection with AI
+            <span>✨</span> Explain with Vajre
         </div>
 
         <!-- AI CHAT DRAWER -->
@@ -94,7 +94,7 @@
             <div class="ai-drawer-header">
                 <div class="ai-drawer-title">
                     <span>🤖</span>
-                    <h3 id="ai-drawer-heading">ML Bootcamp AI Tutor</h3>
+                    <h3 id="ai-drawer-heading">Vajre AI</h3>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <button class="ai-expand-btn" onclick="expandAIDrawer()" title="Expand / Shrink panel">⤢</button>
@@ -120,13 +120,13 @@
             <div id="ai-chat-messages" class="ai-chat-messages">
                 <div class="ai-welcome">
                     <span class="ai-welcome-icon">⚡</span>
-                    <h4>ML Bootcamp AI Tutor Ready</h4>
+                    <h4>Vajre AI Ready</h4>
                     <p>Highlight any text in the tutorial or ask questions directly below for instant deep-dives, code snippets, and explanations!</p>
                 </div>
             </div>
 
             <div class="ai-chat-input-area">
-                <textarea id="ai-chat-input" placeholder="Ask AI anything about this lecture..." rows="2" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendAIMessage();}"></textarea>
+                <textarea id="ai-chat-input" placeholder="Ask Vajre anything about this lecture..." rows="2" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendAIMessage();}"></textarea>
                 <div class="ai-input-actions">
                     <button class="ai-clear-btn" onclick="clearAIChatHistory()">🗑️ Clear</button>
                     <button class="ai-send-btn" onclick="sendAIMessage()">Send ↗</button>
