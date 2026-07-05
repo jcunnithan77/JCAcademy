@@ -556,3 +556,100 @@ function clearAIChatHistory() {
         `;
     }
 }
+
+// ──────────────────────────────────────────────
+// SIDEBAR SHRINK / EXPAND
+// ──────────────────────────────────────────────
+function toggleSidebar() {
+    const sidebar = document.getElementById("main-sidebar");
+    const btn = document.getElementById("sidebar-toggle-btn");
+    if (!sidebar) return;
+    const collapsed = sidebar.classList.toggle("collapsed");
+    if (btn) btn.title = collapsed ? "Expand sidebar" : "Shrink sidebar";
+    localStorage.setItem("ml_sidebar_collapsed", collapsed ? "1" : "0");
+}
+
+// Restore sidebar state on load
+(function restoreSidebarState() {
+    if (localStorage.getItem("ml_sidebar_collapsed") === "1") {
+        const sidebar = document.getElementById("main-sidebar");
+        if (sidebar) sidebar.classList.add("collapsed");
+    }
+})();
+
+// ──────────────────────────────────────────────
+// AI DRAWER: EXPAND / SHRINK TOGGLE
+// ──────────────────────────────────────────────
+const AI_DRAWER_DEFAULT_WIDTH = 440;
+const AI_DRAWER_EXPANDED_WIDTH = Math.min(820, Math.round(window.innerWidth * 0.55));
+
+let _aiDrawerExpanded = false;
+
+function expandAIDrawer() {
+    const drawer = document.getElementById("ai-chat-drawer");
+    const btn = document.querySelector(".ai-expand-btn");
+    if (!drawer) return;
+
+    _aiDrawerExpanded = !_aiDrawerExpanded;
+    const newWidth = _aiDrawerExpanded ? AI_DRAWER_EXPANDED_WIDTH : AI_DRAWER_DEFAULT_WIDTH;
+
+    _setAIDrawerWidth(newWidth);
+    if (btn) btn.textContent = _aiDrawerExpanded ? "⤡" : "⤢";
+    if (btn) btn.title = _aiDrawerExpanded ? "Shrink panel" : "Expand panel";
+}
+
+function _setAIDrawerWidth(px) {
+    document.documentElement.style.setProperty("--ai-drawer-width", px + "px");
+    document.documentElement.style.setProperty("--ai-drawer-open-width", px + "px");
+    // Also save for restore
+    localStorage.setItem("ml_ai_drawer_width", px);
+}
+
+// Restore AI drawer width on load
+(function restoreAIDrawerWidth() {
+    const saved = parseInt(localStorage.getItem("ml_ai_drawer_width"), 10);
+    if (saved && saved >= 320 && saved <= window.innerWidth * 0.9) {
+        _setAIDrawerWidth(saved);
+    }
+})();
+
+// ──────────────────────────────────────────────
+// AI DRAWER: DRAG-TO-RESIZE (left edge handle)
+// ──────────────────────────────────────────────
+(function initAIDrawerResize() {
+    const handle = document.getElementById("ai-drawer-resize-handle");
+    const drawer = document.getElementById("ai-chat-drawer");
+    if (!handle || !drawer) return;
+
+    let startX = 0;
+    let startWidth = 0;
+    let isDragging = false;
+
+    handle.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startWidth = drawer.offsetWidth;
+        handle.classList.add("dragging");
+
+        document.body.style.cursor = "ew-resize";
+        document.body.style.userSelect = "none";
+
+        e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        // Dragging left = wider, dragging right = narrower
+        const delta = startX - e.clientX;
+        const newWidth = Math.max(320, Math.min(Math.round(window.innerWidth * 0.85), startWidth + delta));
+        _setAIDrawerWidth(newWidth);
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        handle.classList.remove("dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+    });
+})();

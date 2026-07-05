@@ -16,11 +16,16 @@
 <body>
 
     <!-- SIDEBAR -->
-    <aside>
+    <aside id="main-sidebar">
         <div class="sidebar-header">
-            <h1>📚 ML Bootcamp Hub</h1>
+            <div class="sidebar-header-top">
+                <h1 id="sidebar-title">📚 ML Bootcamp Hub</h1>
+                <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Shrink / Expand sidebar">
+                    ◀
+                </button>
+            </div>
             <div class="progress-text">
-                <span>Course Progress</span>
+                <span id="sidebar-progress-label">Course Progress</span>
                 <span id="progress-percent">0%</span>
             </div>
             <div class="progress-bar">
@@ -83,12 +88,18 @@
 
         <!-- AI CHAT DRAWER -->
         <aside id="ai-chat-drawer" class="ai-chat-drawer">
+            <!-- Drag-resize handle (left edge) -->
+            <div class="ai-drawer-resize-handle" id="ai-drawer-resize-handle" title="Drag to resize"></div>
+
             <div class="ai-drawer-header">
                 <div class="ai-drawer-title">
                     <span>🤖</span>
-                    <h3>ML Bootcamp AI Tutor</h3>
+                    <h3 id="ai-drawer-heading">ML Bootcamp AI Tutor</h3>
                 </div>
-                <button class="ai-drawer-close" onclick="toggleAIChatDrawer(false)">✕</button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="ai-expand-btn" onclick="expandAIDrawer()" title="Expand / Shrink panel">⤢</button>
+                    <button class="ai-drawer-close" onclick="toggleAIChatDrawer(false)">✕</button>
+                </div>
             </div>
             
             <div id="ai-context-preview" class="ai-context-preview" style="display: none;">
