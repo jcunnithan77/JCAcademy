@@ -267,12 +267,15 @@ aside#main-sidebar.collapsed .sidebar-header-top {
 /* MAIN WORKSPACE */
 main {
     flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;                    /* ← crucial: lets flexbox shrink/grow correctly */
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
     position: relative;
-    transition: margin-right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: margin-right 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body.ai-drawer-open main {
@@ -280,39 +283,54 @@ body.ai-drawer-open main {
 }
 
 header {
-    height: 76px;
+    min-height: 64px;
+    height: auto;
     border-bottom: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 40px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 20px;
     background: rgba(3, 7, 18, 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     flex-shrink: 0;
     z-index: 5;
+    overflow: hidden;
+}
+
+.header-title-container {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .header-title-container h2 {
     font-family: var(--font-heading);
-    font-size: 1.15rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .quick-action-btn {
     background: rgba(99, 102, 241, 0.1);
     border: 1px solid rgba(99, 102, 241, 0.2);
-    padding: 10px 20px;
+    padding: 8px 14px;
     border-radius: 8px;
     color: #a5b4fc;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .quick-action-btn:hover {
@@ -638,31 +656,41 @@ table.ct { width: 100%; border-collapse: separate; border-spacing: 0; margin: 32
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
+    max-width: 100%;
 }
 
 .ai-key-box {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: rgba(15, 23, 42, 0.7);
     border: 1px solid var(--glass-border);
-    padding: 4px 10px;
+    padding: 4px 8px;
     border-radius: 10px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .ai-key-box span {
     color: var(--accent-cyan);
     font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .ai-key-box input {
     background: transparent;
     border: none;
     color: #fff;
-    font-size: 0.85rem;
-    width: 140px;
+    font-size: 0.82rem;
+    width: 100px;
+    min-width: 60px;
+    flex-shrink: 1;
     outline: none;
     font-family: var(--font-mono);
 }
