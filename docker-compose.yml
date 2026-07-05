@@ -9,4 +9,8 @@ services:
     environment:
       - COURSES_DIR=/app/Courses
       - PORT=8585
+    volumes:
+      # Bind-mount: maps host Courses folder directly into container.
+      # Files added/uploaded on either side are immediately visible on both.
+      - ./Courses:/app/Courses
     restart: unless-stopped
