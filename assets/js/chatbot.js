@@ -10,13 +10,15 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initAIChatbot() {
-    // Load saved key
-    const savedKey = localStorage.getItem("ml_ai_api_key");
-    const inputEl = document.getElementById("ai-api-key-input");
-    if (savedKey && inputEl) {
-        inputEl.value = savedKey;
-        updateKeyStatus(true);
+    // Load saved provider
+    const savedProvider = localStorage.getItem("ml_ai_provider") || "openai";
+    const providerEl = document.getElementById("ai-provider-select");
+    if (providerEl) {
+        providerEl.value = savedProvider;
     }
+
+    // Load saved key for provider
+    onProviderChange(false);
 
     // Listen for selection inside content workspace
     const contentBox = document.getElementById("content-container");
@@ -47,18 +49,74 @@ function initAIChatbot() {
     }
 }
 
+function onProviderChange(showToastMsg = true) {
+    const providerEl = document.getElementById("ai-provider-select");
+    if (!providerEl) return;
+    const provider = providerEl.value;
+    localStorage.setItem("ml_ai_provider", provider);
+    
+    const inputEl = document.getElementById("ai-api-key-input");
+    if (inputEl) {
+        if (provider === "ollama") {
+            inputEl.placeholder = "No Key needed for Ollama";
+            inputEl.disabled = true;
+            inputEl.style.opacity = "0.5";
+            inputEl.value = "";
+            updateKeyStatus(true);
+        } else if (provider === "gemini") {
+            inputEl.placeholder = "AIza...";
+            inputEl.disabled = false;
+            inputEl.style.opacity = "1";
+        } else if (provider === "groq") {
+            inputEl.placeholder = "gsk_...";
+            inputEl.disabled = false;
+            inputEl.style.opacity = "1";
+        } else if (provider === "anthropic") {
+            inputEl.placeholder = "sk-ant-...";
+            inputEl.disabled = false;
+            inputEl.style.opacity = "1";
+        } else if (provider === "deepseek") {
+            inputEl.placeholder = "sk-... (DeepSeek)";
+            inputEl.disabled = false;
+            inputEl.style.opacity = "1";
+        } else {
+            inputEl.placeholder = "sk-... (OpenAI)";
+            inputEl.disabled = false;
+            inputEl.style.opacity = "1";
+        }
+        
+        if (provider !== "ollama") {
+            const providerKey = localStorage.getItem(`ml_ai_api_key_${provider}`) || localStorage.getItem("ml_ai_api_key") || "";
+            inputEl.value = providerKey;
+            updateKeyStatus(!!providerKey);
+        }
+    }
+    if (showToastMsg) {
+        showToast(`🤖 Switched to ${provider.toUpperCase()} provider`);
+    }
+}
+
 function saveApiKey() {
     const inputEl = document.getElementById("ai-api-key-input");
+    const providerEl = document.getElementById("ai-provider-select");
+    const provider = providerEl ? providerEl.value : "openai";
+    
+    if (provider === "ollama") {
+        showToast("✅ Ollama runs locally without an API Key!");
+        return;
+    }
+    
     if (!inputEl) return;
     const key = inputEl.value.trim();
     if (key) {
-        localStorage.setItem("ml_ai_api_key", key);
+        localStorage.setItem(`ml_ai_api_key_${provider}`, key);
+        localStorage.setItem("ml_ai_api_key", key); // fallback for legacy
         updateKeyStatus(true);
-        showToast("✅ API Key Saved Successfully!");
+        showToast(`✅ ${provider.toUpperCase()} API Key Saved!`);
     } else {
-        localStorage.removeItem("ml_ai_api_key");
+        localStorage.removeItem(`ml_ai_api_key_${provider}`);
         updateKeyStatus(false);
-        showToast("⚠️ API Key Removed");
+        showToast(`⚠️ ${provider.toUpperCase()} API Key Removed`);
     }
 }
 
@@ -161,10 +219,13 @@ async function sendAIMessage(customText = null) {
     if (!text) return;
 
     lastUserPrompt = text;
-    const apiKey = localStorage.getItem("ml_ai_api_key") || (document.getElementById("ai-api-key-input") ? document.getElementById("ai-api-key-input").value.trim() : "");
+    const providerEl = document.getElementById("ai-provider-select");
+    const provider = providerEl ? providerEl.value : (localStorage.getItem("ml_ai_provider") || "openai");
+    
+    const apiKey = localStorage.getItem(`ml_ai_api_key_${provider}`) || localStorage.getItem("ml_ai_api_key") || (document.getElementById("ai-api-key-input") ? document.getElementById("ai-api-key-input").value.trim() : "");
 
-    if (!apiKey) {
-        appendChatMessage("assistant", "⚠️ **Missing API Key:** Please enter and save your Gemini or OpenAI API Key at the top of the dashboard before asking questions!");
+    if (!apiKey && provider !== "ollama") {
+        appendChatMessage("assistant", `⚠️ **Missing API Key:** Please enter and save your API Key for **${provider.toUpperCase()}** at the top of the dashboard before asking questions!`);
         toggleAIChatDrawer(true);
         return;
     }
@@ -175,19 +236,28 @@ async function sendAIMessage(customText = null) {
     appendChatMessage("user", text);
 
     // Show loading bubble
-    const loadingId = appendChatMessage("assistant", "⏳ *AI Tutor is thinking...*", true);
+    const loadingId = appendChatMessage("assistant", `⏳ *AI Tutor (${provider.toUpperCase()}) is thinking...*`, true);
 
     try {
         let aiResponse = "";
-        if (apiKey.startsWith("AIza")) {
+        if (provider === "gemini" || (provider === "openai" && apiKey.startsWith("AIza"))) {
             aiResponse = await callGeminiAPI(apiKey, text);
+        } else if (provider === "groq" || (provider === "openai" && apiKey.startsWith("gsk_"))) {
+            aiResponse = await callOpenAICompatibleAPI(apiKey, text, "https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile", "Groq");
+        } else if (provider === "deepseek") {
+            aiResponse = await callOpenAICompatibleAPI(apiKey, text, "https://api.deepseek.com/chat/completions", "deepseek-chat", "DeepSeek");
+        } else if (provider === "anthropic") {
+            aiResponse = await callAnthropicAPI(apiKey, text);
+        } else if (provider === "ollama") {
+            aiResponse = await callOllamaAPI(text);
         } else {
-            aiResponse = await callOpenAICompatibleAPI(apiKey, text);
+            // Default: OpenAI
+            aiResponse = await callOpenAICompatibleAPI(apiKey, text, "https://api.openai.com/v1/chat/completions", "gpt-4o-mini", "OpenAI");
         }
 
         updateChatMessage(loadingId, aiResponse);
     } catch (err) {
-        updateChatMessage(loadingId, `❌ **Error connecting to AI Tutor:** ${err.message}`);
+        updateChatMessage(loadingId, `❌ **Error connecting to ${provider.toUpperCase()}:** ${err.message}`);
     }
 }
 
@@ -269,13 +339,11 @@ Your guidance guidelines:
     throw new Error(lastError || "Could not find a supported Gemini model for generateContent with this API key.");
 }
 
-async function callOpenAICompatibleAPI(apiKey, prompt) {
-    let endpoint = "https://api.openai.com/v1/chat/completions";
-    let model = "gpt-4o-mini";
-
-    if (apiKey.startsWith("gsk_")) {
+async function callOpenAICompatibleAPI(apiKey, prompt, endpoint = "https://api.openai.com/v1/chat/completions", model = "gpt-4o-mini", providerName = "OpenAI") {
+    if (apiKey.startsWith("gsk_") && endpoint.includes("openai.com")) {
         endpoint = "https://api.groq.com/openai/v1/chat/completions";
         model = "llama-3.3-70b-versatile";
+        providerName = "Groq";
     }
 
     const messages = [
@@ -304,9 +372,66 @@ async function callOpenAICompatibleAPI(apiKey, prompt) {
 
     const data = await response.json();
     if (data.error) {
-        throw new Error(data.error.message || "OpenAI/Groq API Error");
+        throw new Error(data.error.message || `${providerName} API Error`);
     }
     return data.choices?.[0]?.message?.content || "No response received.";
+}
+
+async function callAnthropicAPI(apiKey, prompt) {
+    const systemPrompt = `You are a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`;
+    const userContent = currentSelectionContext ? `Enclosed Selected Content: "${currentSelectionContext}"\n\nQuestion: ${prompt}` : prompt;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: 2048,
+            system: systemPrompt,
+            messages: [
+                { role: "user", content: userContent }
+            ],
+            temperature: 0.7
+        })
+    });
+
+    const data = await response.json();
+    if (data.error) {
+        throw new Error(data.error.message || "Anthropic API Error");
+    }
+    return data.content?.[0]?.text || "No response received from Anthropic.";
+}
+
+async function callOllamaAPI(prompt) {
+    const systemPrompt = `You are a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`;
+    const userContent = currentSelectionContext ? `Enclosed Selected Content: "${currentSelectionContext}"\n\nQuestion: ${prompt}` : prompt;
+
+    try {
+        const response = await fetch("http://localhost:11434/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "llama3",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userContent }
+                ],
+                temperature: 0.7
+            })
+        });
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error.message || "Ollama API Error");
+        }
+        return data.choices?.[0]?.message?.content || "No response received from local Ollama.";
+    } catch (e) {
+        throw new Error("Could not connect to local Ollama on http://localhost:11434. Make sure Ollama is running locally and has CORS enabled (set environment variable OLLAMA_ORIGINS=*).");
+    }
 }
 
 function appendChatMessage(role, text, isTemporary = false) {

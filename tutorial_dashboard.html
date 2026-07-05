@@ -50,9 +50,18 @@
                         📤 +
                     </button>
                 </div>
-                <div class="ai-key-box">
-                    <span>🔑 AI Key:</span>
-                    <input type="password" id="ai-api-key-input" placeholder="AIza... or sk-...">
+                <div class="ai-key-box" style="display:flex; align-items:center; gap:6px;">
+                    <span>🤖 Provider:</span>
+                    <select id="ai-provider-select" onchange="onProviderChange()" style="background:#1e293b; color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:5px 8px; border-radius:6px; font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer; outline:none;">
+                        <option value="openai">OpenAI (GPT-4o)</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="groq">Groq (Fast Llama / DeepSeek)</option>
+                        <option value="deepseek">DeepSeek AI</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="ollama">Ollama (Local AI - No Key)</option>
+                    </select>
+                    <span>🔑 Key:</span>
+                    <input type="password" id="ai-api-key-input" placeholder="sk-... (OpenAI)" style="width:140px;">
                     <button onclick="saveApiKey()">Save</button>
                 </div>
                 <button class="quick-action-btn ai-btn" onclick="toggleAIChatDrawer(true)">
