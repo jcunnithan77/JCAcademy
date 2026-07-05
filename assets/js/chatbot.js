@@ -236,7 +236,7 @@ async function sendAIMessage(customText = null) {
     appendChatMessage("user", text);
 
     // Show loading bubble
-    const loadingId = appendChatMessage("assistant", `⏳ *AI Tutor (${provider.toUpperCase()}) is thinking...*`, true);
+    const loadingId = appendChatMessage("assistant", `⏳ *Vajre (${provider.toUpperCase()}) is thinking...*`, true);
 
     try {
         let aiResponse = "";
@@ -262,7 +262,7 @@ async function sendAIMessage(customText = null) {
 }
 
 async function callGeminiAPI(apiKey, prompt) {
-    const fullPrompt = `You are a world-class AI Mentor & Lead Technical Instructor coaching a student studying: "${getActiveSectionTitle()}".
+    const fullPrompt = `You are Vajre, a world-class AI Mentor & Lead Technical Instructor coaching a student studying: "${getActiveSectionTitle()}".
 ${currentSelectionContext ? `\n--- ENCLOSED STUDENT SELECTION ---\n"${currentSelectionContext}"\n----------------------------------\n` : ""}
 
 Student Query: "${prompt}"
@@ -349,7 +349,7 @@ async function callOpenAICompatibleAPI(apiKey, prompt, endpoint = "https://api.o
     const messages = [
         {
             role: "system",
-            content: `You are a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`
+            content: `You are Vajre, a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`
         },
         {
             role: "user",
@@ -378,7 +378,7 @@ async function callOpenAICompatibleAPI(apiKey, prompt, endpoint = "https://api.o
 }
 
 async function callAnthropicAPI(apiKey, prompt) {
-    const systemPrompt = `You are a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`;
+    const systemPrompt = `You are Vajre, a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`;
     const userContent = currentSelectionContext ? `Enclosed Selected Content: "${currentSelectionContext}"\n\nQuestion: ${prompt}` : prompt;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -408,7 +408,7 @@ async function callAnthropicAPI(apiKey, prompt) {
 }
 
 async function callOllamaAPI(prompt) {
-    const systemPrompt = `You are a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`;
+    const systemPrompt = `You are Vajre, a world-class AI Mentor teaching the course module: ${getActiveSectionTitle()}. Provide rigorous, clean Markdown explanations.`;
     const userContent = currentSelectionContext ? `Enclosed Selected Content: "${currentSelectionContext}"\n\nQuestion: ${prompt}` : prompt;
 
     try {
