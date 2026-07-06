@@ -481,6 +481,11 @@ class PortalHandler(BaseHTTPRequestHandler):
                         if target_sec and "ai_notes" in target_sec and 0 <= note_idx < len(target_sec["ai_notes"]):
                             if action == "rename" and new_title:
                                 target_sec["ai_notes"][note_idx]["title"] = new_title
+                            elif action == "update":
+                                if new_title:
+                                    target_sec["ai_notes"][note_idx]["title"] = new_title
+                                if "content" in data and data["content"] is not None:
+                                    target_sec["ai_notes"][note_idx]["content"] = str(data["content"])
                             elif action == "delete":
                                 target_sec["ai_notes"].pop(note_idx)
                             

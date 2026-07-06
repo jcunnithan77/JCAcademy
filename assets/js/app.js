@@ -154,6 +154,9 @@ function renderSavedAINotes(notes) {
                                 <button onclick="renameSavedAINote(${idx}, '${safeTitle}')" title="Rename Note Title" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:all 0.2s; display:flex; align-items:center; gap:4px;">
                                     ✏️ Rename
                                 </button>
+                                <button onclick="toggleEditSavedAINote(${idx})" title="Edit & Update Note Content" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.3); padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:all 0.2s; display:flex; align-items:center; gap:4px;">
+                                    📝 Edit / Update
+                                </button>
                                 <button onclick="deleteSavedAINote(${idx})" title="Delete Saved Note" style="background:rgba(248,113,113,0.15); color:#f87171; border:1px solid rgba(248,113,113,0.3); padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; transition:all 0.2s; display:flex; align-items:center; gap:4px;">
                                     🗑️ Delete
                                 </button>
@@ -168,6 +171,20 @@ function renderSavedAINotes(notes) {
                 <div id="${noteId}" class="note-expand-body" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1); color:#e2e8f0; font-size:0.95rem; line-height:1.6;">
                     ${formatted}
                 </div>
+                <div id="ai-saved-note-edit-${idx}" class="note-edit-body" style="display:none; margin-top:16px; padding:16px; background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+                    <label style="display:block; font-size:0.8rem; color:#94a3b8; margin-bottom:4px; font-weight:600;">Note Title:</label>
+                    <input type="text" id="ai-note-edit-title-${idx}" value="${safeTitle}" style="width:100%; background:#1e293b; color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:8px 12px; border-radius:6px; font-size:0.95rem; font-family:'Inter',sans-serif; margin-bottom:12px; outline:none; box-sizing:border-box;">
+                    <label style="display:block; font-size:0.8rem; color:#94a3b8; margin-bottom:4px; font-weight:600;">Note Content (Markdown / Text):</label>
+                    <textarea id="ai-note-edit-content-${idx}" rows="8" style="width:100%; background:#1e293b; color:#e2e8f0; border:1px solid rgba(255,255,255,0.2); padding:10px 12px; border-radius:6px; font-size:0.9rem; font-family:'JetBrains Mono',monospace; line-height:1.5; outline:none; box-sizing:border-box; resize:vertical;">${note.content || ''}</textarea>
+                    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+                        <button onclick="toggleEditSavedAINote(${idx})" style="background:rgba(255,255,255,0.1); color:#94a3b8; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s;">
+                            ✕ Cancel
+                        </button>
+                        <button onclick="updateSavedAINote(${idx})" style="background:#10b981; color:#ffffff; border:none; padding:8px 20px; border-radius:6px; cursor:pointer; font-size:0.85rem; font-weight:700; box-shadow:0 4px 12px rgba(16,185,129,0.3); transition:all 0.2s; display:flex; align-items:center; gap:6px;">
+                            💾 Update Note
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
     });
@@ -176,6 +193,35 @@ function renderSavedAINotes(notes) {
         </div>
     `;
     return html;
+}
+
+function toggleEditSavedAINote(idx) {
+    const editEl = document.getElementById(`ai-saved-note-edit-${idx}`);
+    const viewEl = document.getElementById(`ai-saved-note-${idx}`);
+    if (!editEl) return;
+    
+    if (editEl.style.display === "none" || !editEl.style.display) {
+        editEl.style.display = "block";
+        if (viewEl) viewEl.style.display = "none";
+    } else {
+        editEl.style.display = "none";
+    }
+}
+
+async function updateSavedAINote(idx) {
+    const titleInput = document.getElementById(`ai-note-edit-title-${idx}`);
+    const contentInput = document.getElementById(`ai-note-edit-content-${idx}`);
+    if (!titleInput || !contentInput) return;
+    
+    const newTitle = titleInput.value.trim();
+    const newContent = contentInput.value;
+    
+    if (!newTitle) {
+        alert("Note title cannot be empty.");
+        return;
+    }
+    
+    await manageAINoteAction(idx, "update", { title: newTitle, content: newContent });
 }
 
 async function renameSavedAINote(idx, oldTitle) {
@@ -211,7 +257,10 @@ async function manageAINoteAction(idx, action, extraData = {}) {
         if (res.ok) {
             const data = await res.json();
             if (typeof showToast === "function") {
-                showToast(action === "rename" ? "✅ Note renamed successfully!" : "🗑️ Note deleted successfully!");
+                let msg = "✅ Note updated successfully!";
+                if (action === "rename") msg = "✅ Note renamed successfully!";
+                if (action === "delete") msg = "🗑️ Note deleted successfully!";
+                showToast(msg);
             }
             if (typeof window.courseData !== "undefined" && typeof activeSectionId !== "undefined") {
                 const sec = window.courseData.find(c => c.id === activeSectionId);
